@@ -1,0 +1,43 @@
+#!/usr/bin/python
+
+import ConfigParser
+import os
+import signal
+import sys
+import urllib2
+
+from ical_reminder import reminder
+
+
+UI_MODULES = {
+    'gtk': reminder.GtkCalendar,
+    'zenity': reminder.ZenityCalendar,
+    'console': reminder.Calendar,
+}
+
+config = ConfigParser.ConfigParser()
+config_file = os.path.abspath(
+    os.path.join(os.path.expanduser('~'),
+                 '.reminder.conf'))
+print config_file
+config.read(config_file)
+config.add_section('state')
+config.set('state', 'config_file', config_file)
+
+if config.has_section('ui'):
+    ui_type = config.get('ui', 'type', 'gtk').lower()
+else:
+    ui_type = 'gtk'
+if ui_type not in UI_MODULES:
+    print "Configured UI type `%s' not one of %s" % (
+        ', '.join(UI_MODULES.keys()))
+    sys.exit(1)
+
+calendar = UI_MODULES[ui_type](config)
+signal.signal(signal.SIGHUP, lambda *a: calendar.read_config())
+while True:
+    try:
+        calendar.refresh_calendar()
+    except urllib2.HTTPError, e:
+        print 'Failed to update calendar: %s' % e
+    calendar.handle_alarms_until_refresh()

@@ -1,0 +1,28 @@
+# This should be configured and placed in ~/.reminder.conf
+[calendar]
+# HTTP access credentials
+user = bob
+pass = seekr3t
+
+# The location of your iCal feed
+url = http://myserver.com/calendar.ical
+
+# How often (minutes) to re-fetch the iCal from the server
+refresh = 10
+
+[alarms]
+# How often (in seconds) to survey all the pending alarms tp
+# determine if one is due. This controls the resolution of
+# reminders. Ten seconds should be fine
+poll = 10
+
+# Default snooze value (in minutes). Not honored by all the
+# UI modules
+default_snooze = 5
+
+[ui]
+# The UI module to use for alarms. Options are:
+#  console: A very simple console-based prompt
+#  zenity: (ab)Use zenity to prompt for alarm actions
+#  gtk: Use python gtk3 to display alarms (you want this)
+type = gtk
