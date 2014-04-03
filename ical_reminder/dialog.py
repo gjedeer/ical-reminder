@@ -21,6 +21,7 @@ class Reminder(Gtk.Dialog):
         vbox.add(self.detail_label)
 
         description = Gtk.TextView()
+        description.set_wrap_mode(Gtk.WrapMode.WORD)
         description.get_buffer().set_text(
             'Location: %s\n\n%s' % (
                 event.location, event.description))
@@ -87,7 +88,10 @@ if __name__ == '__main__':
     event.start_time = datetime.datetime.now()
     event.summary = 'Test Event'
     event.location = 'Test Location'
-    event.description = 'Loooooooooooooooooooots\nOf\nDetails!'
+    event.description = ('Loooooooooooooooooooots\nOf\nDetails!\n' +
+                         'this will become a very long line which ' +
+                         'will help test that the wrapping mode is ' +
+                         'correctly set on the text view.')
 
     alarm = Alarm()
 
