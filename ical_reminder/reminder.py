@@ -112,6 +112,7 @@ class Alarm(object):
         self._event = event
         self._alarm = alarm
         self._fire_at = next_repeat + alarm.decoded('TRIGGER')
+        self._event_instance = next_repeat
         self._context = context
         # Update our due date from the context, if present
         self._fire_at = self._context.register(self)
@@ -120,7 +121,7 @@ class Alarm(object):
     def id(self):
         # FIXME for multiple alarms!
         return '%s_%s' % (self._event.get('UID'),
-                          self._event.decoded('DTSTART'))
+                          self._event_instance)
 
     @property
     def is_due(self):
@@ -157,9 +158,28 @@ class Alarm(object):
 
 class Event(object):
     def __init__(self, event, context):
+        self._context = context
         self._event = event
         self._next_repeat = get_repeat_event(event)
         self._alarms = Alarm.get_from_event(event, self._next_repeat, context)
+
+    def process_change(self, event):
+        recurrence = event.get('recurrence-id')
+        if recurrence and recurrence.dt == self._next_repeat:
+            orig = self._next_repeat
+            self._next_repeat = event.decoded('dtstart')
+            self._alarms = Alarm.get_from_event(event, self._next_repeat,
+                                                self._context)
+            print "%s: %s rescheduled to %s" % (event.get('summary'),
+                                                orig,
+                                                self._next_repeat)
+        elif not recurrence:
+            print "Unknown change %s @ %s" % (event.get('summary'),
+                                              event.decoded('dtstart'))
+
+    @property
+    def uid(self):
+        return self._event.get('uid')
 
     @property
     def summary(self):
@@ -201,6 +221,15 @@ class Calendar(object):
         config_file = self._config.get('state', 'config_file', 'reminder.conf')
         self._config.read(config_file)
 
+    def _process_event(self, upcoming, item):
+        if item.get('recurrence-id'):
+            for event in upcoming:
+                if event.uid == item.get('uid'):
+                    event.process_change(item)
+                    return event
+            print 'No event matching recurrence %s' % item.get('summary')
+        return Event(item, self._context)
+
     def _get_upcoming(self, cal, timerange):
         upcoming = []
         for item in cal.walk():
@@ -211,12 +240,14 @@ class Calendar(object):
                 elif isinstance(start, datetime.date):
                     # Convert this to start-of-day localtime!
                     continue
+
                 try:
-                    event = Event(item, self._context)
+                    event = self._process_event(upcoming, item)
                 except:
                     print 'Failed to parse %s' % item.get('summary')
                     continue
-                if event.is_relevant and event.has_alarms:
+                if (event.is_relevant and event.has_alarms and
+                        event not in upcoming):
                     upcoming.append(event)
         print 'Upcoming'
         for event in sorted(upcoming, key=lambda x: x._next_repeat):
