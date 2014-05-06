@@ -52,6 +52,8 @@ class Reminder(Gtk.Dialog):
         snoozetimes.set_active(0)
         hbox.add(snoozetimes)
 
+        self.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
+
     def _dismiss(self, alarm):
         alarm.acknowledge()
         self.destroy()
