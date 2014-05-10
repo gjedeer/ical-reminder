@@ -40,7 +40,8 @@ class Reminder(Gtk.Dialog):
                        lambda w: self._snooze(alarm, snoozetimes.get_active()))
         hbox.add(snooze)
 
-        self._snooze_times = [('5 Minutes', 5), ('10 Minutes', 10),
+        self._snooze_times = [('3 Minutes', 3),
+                              ('5 Minutes', 5), ('10 Minutes', 10),
                               ('15 Minutes', 15), ('30 Minutes', 30),
                               ('1 Hour', 60), ('2 Hours', 120),
                               ('6 Hours', 360), ('12 Hours', 720),
@@ -49,7 +50,7 @@ class Reminder(Gtk.Dialog):
         snoozetimes = Gtk.ComboBoxText.new()
         for label, minutes in self._snooze_times:
             snoozetimes.append(None, label)
-        snoozetimes.set_active(0)
+        snoozetimes.set_active(1)
         hbox.add(snoozetimes)
 
         self.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
