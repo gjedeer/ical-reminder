@@ -1,4 +1,5 @@
 import base64
+import codecs
 import datetime
 import iso8601
 import icalendar
@@ -265,7 +266,36 @@ class Calendar(object):
         con = urllib2.urlopen(req)
         return con.read()
 
-    def refresh_calendar(self):
+    def _refresh_calendar_caldav(self):
+        import caldav
+        import caldav.objects
+        client = caldav.DAVClient(
+            url=self._config.get('calendar', 'url'),
+            username=self._config.get('calendar', 'user'),
+            password=self._config.get('calendar', 'pass'))
+        calendar = caldav.objects.Calendar(
+            client=client, 
+            url=self._config.get('calendar', 'url'))
+
+        self._cal = icalendar.Calendar()
+
+        for event in calendar.events():
+            if type(event.data) == unicode:
+                event_data = event.data
+            else:
+                event_data = codecs.decode(event.data, 'utf8')
+
+            cal = icalendar.Calendar.from_ical(event_data)
+            for component in cal.subcomponents:
+                self._cal.add_component(component)
+
+        with codecs.open('calendar.ics', 'w', encoding='utf-8') as f:
+            f.write(codecs.decode(self._cal.to_ical(), 'utf-8'))
+        self._upcoming_events = self._get_upcoming(self._cal,
+                                                   datetime.timedelta(days=2))
+        self._last_refresh = datetime.datetime.now()
+
+    def _refresh_calendar_ical(self):
         data = self._get_calendar_data(
             self._config.get('calendar', 'url'),
             self._config.get('calendar', 'user'),
@@ -276,6 +306,12 @@ class Calendar(object):
         self._upcoming_events = self._get_upcoming(self._cal,
                                                    datetime.timedelta(days=2))
         self._last_refresh = datetime.datetime.now()
+
+    def refresh_calendar(self):
+        if self._config.get('calendar', 'caldav'):
+            self._refresh_calendar_caldav()
+        else:
+            self._refresh_calendar_ical()
 
     def handle_alarm(self, event, alarm):
         print '*** Alarm: %s' % event.summary

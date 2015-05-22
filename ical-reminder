@@ -15,7 +15,9 @@ UI_MODULES = {
     'console': reminder.Calendar,
 }
 
-config = ConfigParser.ConfigParser()
+config = ConfigParser.ConfigParser({
+    'caldav': False,
+})
 config_file = os.path.abspath(
     os.path.join(os.path.expanduser('~'),
                  '.reminder.conf'))
