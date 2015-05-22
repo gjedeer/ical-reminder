@@ -7,6 +7,10 @@ pass = seekr3t
 # The location of your iCal feed
 url = http://myserver.com/calendar.ical
 
+# Whether the above is a CalDAV calendar URL
+# (0 = ical 1 = caldav)
+caldav = 0
+
 # How often (minutes) to re-fetch the iCal from the server
 refresh = 10
 
