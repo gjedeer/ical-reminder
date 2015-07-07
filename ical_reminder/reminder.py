@@ -269,25 +269,31 @@ class Calendar(object):
     def _refresh_calendar_caldav(self):
         import caldav
         import caldav.objects
-        client = caldav.DAVClient(
-            url=self._config.get('calendar', 'url'),
-            username=self._config.get('calendar', 'user'),
-            password=self._config.get('calendar', 'pass'))
-        calendar = caldav.objects.Calendar(
-            client=client, 
-            url=self._config.get('calendar', 'url'))
+        urls = self._config.get('calendar', 'urls')
+        if not urls:
+            urls = [self._config.get('calendar', 'url')]
+        else:
+            urls = urls.split(',')
+        for url in urls:
+            client = caldav.DAVClient(
+                url=url,
+                username=self._config.get('calendar', 'user'),
+                password=self._config.get('calendar', 'pass'))
+            calendar = caldav.objects.Calendar(
+                client=client, 
+                url=url)
 
-        self._cal = icalendar.Calendar()
+            self._cal = icalendar.Calendar()
 
-        for event in calendar.events():
-            if type(event.data) == unicode:
-                event_data = event.data
-            else:
-                event_data = codecs.decode(event.data, 'utf8')
+            for event in calendar.events():
+                if type(event.data) == unicode:
+                    event_data = event.data
+                else:
+                    event_data = codecs.decode(event.data, 'utf8')
 
-            cal = icalendar.Calendar.from_ical(event_data)
-            for component in cal.subcomponents:
-                self._cal.add_component(component)
+                cal = icalendar.Calendar.from_ical(event_data)
+                for component in cal.subcomponents:
+                    self._cal.add_component(component)
 
         with codecs.open('calendar.ics', 'w', encoding='utf-8') as f:
             f.write(codecs.decode(self._cal.to_ical(), 'utf-8'))
